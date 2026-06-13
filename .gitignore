@@ -43,3 +43,6 @@ next-env.d.ts
 # local sqlite data
 .data/
 sample-brief.pdf
+
+# keep the env template (it has no secrets)
+!.env.example
