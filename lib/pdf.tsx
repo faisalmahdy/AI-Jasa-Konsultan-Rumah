@@ -271,14 +271,15 @@ function BriefDocument({
 
 /** Render the brief to a PDF buffer. Used by the download route and tests. */
 export function renderBriefPdf(bundle: ProjectBundle): Promise<Buffer> {
-  // Include EVERY accepted view (in display order) for the handoff package. If nothing is
-  // accepted, fall back to the single most recent candidate. Degrades to no image at all.
-  const accepted = VIEW_ORDER.flatMap((view) =>
-    bundle.visuals.filter((v) => v.type === view && v.status === "accepted"),
-  );
-  const chosen = accepted.length
-    ? accepted
-    : [...bundle.visuals].reverse().filter((v) => v.status === "candidate").slice(0, 1);
+  // Attach EVERY generated view to the handoff PDF — one image per view type, in display
+  // order. Prefer an explicitly pinned ("accepted") image; otherwise take the most recent
+  // (non-rejected) candidate. So all the 3D views the consultant generated show up without
+  // having to "accept" each one. Degrades to no image at all when nothing was generated.
+  const chosen = VIEW_ORDER.map((view) => {
+    const ofView = bundle.visuals.filter((v) => v.type === view && v.status !== "rejected");
+    if (!ofView.length) return null;
+    return ofView.find((v) => v.status === "accepted") ?? ofView[ofView.length - 1];
+  }).filter((v): v is VisualVersion => v !== null);
 
   const visualImages: VisualImage[] = [];
   for (const visual of chosen) {

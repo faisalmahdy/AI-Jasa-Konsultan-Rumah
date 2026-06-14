@@ -84,16 +84,16 @@ export default function VisualPanel({
                   />
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <span
-                      className={`text-xs ${latest.status === "accepted" ? "font-semibold text-green-700" : "text-slate-500"}`}
+                      className={`text-xs ${latest.status === "accepted" ? "font-semibold text-green-700" : "text-slate-600"}`}
                     >
-                      {latest.status === "accepted" ? "Dipakai di PDF" : `Konsep (dibuat ${count}×)`}
+                      {latest.status === "accepted" ? "Dikunci · masuk PDF" : `Masuk PDF · konsep (dibuat ${count}×)`}
                     </span>
                     {latest.status !== "accepted" && (
                       <button
                         onClick={() => accept(latest.id)}
                         className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:border-slate-500"
                       >
-                        Gunakan di PDF
+                        Kunci versi ini
                       </button>
                     )}
                   </div>
@@ -108,6 +108,10 @@ export default function VisualPanel({
         })}
       </div>
 
+      <p className="text-[11px] leading-relaxed text-slate-500">
+        Semua tampak yang Anda buat otomatis ikut saat unduh PDF (satu gambar terbaru per tampak).
+        “Kunci versi ini” hanya untuk mempertahankan pilihan saat Anda membuat ulang.
+      </p>
       <p className="text-[11px] leading-relaxed text-slate-500">{VISUAL_MISMATCH_DISCLAIMER}</p>
     </div>
   );
