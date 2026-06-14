@@ -12,7 +12,7 @@ import {
 } from "@react-pdf/renderer";
 import type { ProjectBundle, LayoutOption, Warning, VisualVersion } from "./schemas";
 import { buildPlanDrawing, PLAN_COLORS } from "./plan-render";
-import { VIEW_LABEL } from "./prompt";
+import { VIEW_LABEL, VIEW_ORDER } from "./prompt";
 import { readImagePng } from "./image-store";
 import { DISCLAIMER, VISUAL_MISMATCH_DISCLAIMER, QUESTIONS_FOR_TUKANG } from "./content";
 import {
@@ -150,14 +150,17 @@ function PlanPage({ bundle, layout }: { bundle: ProjectBundle; layout: LayoutOpt
   );
 }
 
+interface VisualImage {
+  visual: VisualVersion;
+  imageDataUrl: string;
+}
+
 function BriefDocument({
   bundle,
-  chosenVisual,
-  imageDataUrl,
+  visualImages,
 }: {
   bundle: ProjectBundle;
-  chosenVisual: VisualVersion | null;
-  imageDataUrl: string | null;
+  visualImages: VisualImage[];
 }) {
   const { brief, feasibility } = bundle;
 
@@ -229,14 +232,18 @@ function BriefDocument({
         <Text style={s.h1}>Tampak / Visual & Pertanyaan untuk Tukang</Text>
         <Text style={s.sub}>Bawa pertanyaan ini saat berdiskusi dengan tukang atau kontraktor.</Text>
 
-        <Text style={s.h2}>Visual Konsep</Text>
-        {chosenVisual && imageDataUrl ? (
-          <View style={s.card}>
-            <Text style={s.cardTitle}>{VIEW_LABEL[chosenVisual.type]} (konsep)</Text>
-            {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            <Image src={imageDataUrl} style={{ marginTop: 6, marginBottom: 6, width: 380, height: 250, objectFit: "contain" }} />
+        <Text style={s.h2}>Visual Konsep 3D</Text>
+        {visualImages.length > 0 ? (
+          <>
+            {visualImages.map(({ visual, imageDataUrl }) => (
+              <View key={visual.id} style={s.card} wrap={false}>
+                <Text style={s.cardTitle}>{VIEW_LABEL[visual.type]} (konsep)</Text>
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <Image src={imageDataUrl} style={{ marginTop: 6, marginBottom: 6, width: 380, height: 250, objectFit: "contain" }} />
+              </View>
+            ))}
             <Text style={s.cardDetail}>{VISUAL_MISMATCH_DISCLAIMER}</Text>
-          </View>
+          </>
         ) : (
           <View style={s.card}>
             <Text style={s.cardTitle}>Visual belum dibuat</Text>
@@ -264,13 +271,20 @@ function BriefDocument({
 
 /** Render the brief to a PDF buffer. Used by the download route and tests. */
 export function renderBriefPdf(bundle: ProjectBundle): Promise<Buffer> {
-  // Prefer an accepted visual, else the most recent candidate. Degrades to no image.
-  const accepted = bundle.visuals.find((v) => v.status === "accepted");
-  const candidate = [...bundle.visuals].reverse().find((v) => v.status === "candidate");
-  const chosen = accepted ?? candidate ?? null;
-  const png = chosen ? readImagePng(chosen.id) : null;
-  const imageDataUrl = png ? `data:image/png;base64,${png.toString("base64")}` : null;
-  return renderToBuffer(
-    <BriefDocument bundle={bundle} chosenVisual={chosen} imageDataUrl={imageDataUrl} />,
-  );
+  // Attach EVERY generated view to the handoff PDF — one image per view type, in display
+  // order. Prefer an explicitly pinned ("accepted") image; otherwise take the most recent
+  // (non-rejected) candidate. So all the 3D views the consultant generated show up without
+  // having to "accept" each one. Degrades to no image at all when nothing was generated.
+  const chosen = VIEW_ORDER.map((view) => {
+    const ofView = bundle.visuals.filter((v) => v.type === view && v.status !== "rejected");
+    if (!ofView.length) return null;
+    return ofView.find((v) => v.status === "accepted") ?? ofView[ofView.length - 1];
+  }).filter((v): v is VisualVersion => v !== null);
+
+  const visualImages: VisualImage[] = [];
+  for (const visual of chosen) {
+    const png = readImagePng(visual.id);
+    if (png) visualImages.push({ visual, imageDataUrl: `data:image/png;base64,${png.toString("base64")}` });
+  }
+  return renderToBuffer(<BriefDocument bundle={bundle} visualImages={visualImages} />);
 }

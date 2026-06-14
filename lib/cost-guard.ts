@@ -17,12 +17,18 @@ export function costConfig() {
   return {
     /** Estimated IDR cost per image. PLACEHOLDER — validate against real OpenAI pricing. */
     imageCostIdr: numEnv("GIL_IMAGE_COST_IDR", 1500),
-    /** Max images per project (e.g. 2 views × 3 regen). */
-    maxPerProject: numEnv("GIL_MAX_IMAGES_PER_PROJECT", 6),
+    /** Max images per project (6 view types × up to 3 regen each). */
+    maxPerProject: numEnv("GIL_MAX_IMAGES_PER_PROJECT", 18),
     /** Hard daily spend ceiling across ALL projects. The real backstop against abuse. */
     dailyCapIdr: numEnv("GIL_DAILY_SPEND_CAP_IDR", 100_000),
     /** Max regenerations per view type (front elevation / 3D). */
     maxRegenPerView: numEnv("GIL_MAX_REGEN_PER_VIEW", 3),
+    /** Estimated IDR cost per NL revision (one Claude Haiku call). PLACEHOLDER. */
+    revisionCostIdr: numEnv("GIL_REVISION_COST_IDR", 200),
+    /** Max NL revisions per project. */
+    maxRevisionsPerProject: numEnv("GIL_MAX_REVISIONS_PER_PROJECT", 15),
+    /** Hard daily cap on revision calls across ALL projects — backstop against abuse. */
+    dailyRevisionCap: numEnv("GIL_DAILY_REVISION_CAP", 500),
   };
 }
 
@@ -61,6 +67,38 @@ export function checkBudget(input: BudgetInput): BudgetDecision {
       allowed: false,
       estimatedCostIdr: est,
       reason: "Batas biaya gambar harian tercapai. Coba lagi besok atau naikkan batas.",
+    };
+  }
+  return { allowed: true, estimatedCostIdr: est };
+}
+
+/**
+ * Revision spend control (Stage 4). The /revise endpoint fires a paid LLM call, so it
+ * carries the SAME cost-DoS risk as image generation and gets the same treatment: per-
+ * project + global daily caps, enforced HERE before any call to Anthropic. Pure for the
+ * same reason — the route reads the ledger counts from the DB and passes them in.
+ */
+export interface RevisionBudgetInput {
+  projectRevisions: number;
+  revisionsToday: number;
+}
+
+export function checkRevisionBudget(input: RevisionBudgetInput): BudgetDecision {
+  const cfg = costConfig();
+  const est = cfg.revisionCostIdr;
+
+  if (input.projectRevisions >= cfg.maxRevisionsPerProject) {
+    return {
+      allowed: false,
+      estimatedCostIdr: est,
+      reason: `Batas jumlah revisi per proyek tercapai (maksimal ${cfg.maxRevisionsPerProject}).`,
+    };
+  }
+  if (input.revisionsToday >= cfg.dailyRevisionCap) {
+    return {
+      allowed: false,
+      estimatedCostIdr: est,
+      reason: "Batas jumlah revisi harian tercapai. Coba lagi besok atau naikkan batas.",
     };
   }
   return { allowed: true, estimatedCostIdr: est };

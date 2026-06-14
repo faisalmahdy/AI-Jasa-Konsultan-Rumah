@@ -1,4 +1,4 @@
-import type { Style, Priority, Orientation, BudgetVerdict } from "./schemas";
+import type { Style, Priority, Orientation, BudgetVerdict, ExtraRoom } from "./schemas";
 
 /** Rp formatting, no decimals. Used in feasibility text, the UI, and the PDF. */
 export function formatIdr(n: number): string {
@@ -39,6 +39,17 @@ export const ORIENTATION_LABEL: Record<Orientation, string> = {
   barat_daya: "Barat Daya",
   barat: "Barat",
   barat_laut: "Barat Laut",
+};
+
+export const EXTRA_ROOM_LABEL: Record<ExtraRoom, string> = {
+  ruang_tamu: "Ruang Tamu",
+  ruang_keluarga: "Ruang Keluarga",
+  ruang_makan: "Ruang Makan",
+  dapur: "Dapur",
+  garasi: "Garasi",
+  taman: "Taman",
+  mushola: "Mushola",
+  gudang: "Gudang",
 };
 
 export const BUDGET_VERDICT_LABEL: Record<BudgetVerdict, string> = {

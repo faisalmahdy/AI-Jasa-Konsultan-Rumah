@@ -6,16 +6,18 @@ import {
   logImageGeneration,
   countProjectGenerations,
   sumDailySpendIdr,
+  getProjectVisualClauses,
+  getRecommendedLayout,
 } from "@/lib/db";
 import { checkBudget } from "@/lib/cost-guard";
-import { buildImagePrompt, type ViewType } from "@/lib/prompt";
+import { buildImagePrompt, VIEW_ORDER, type ViewType } from "@/lib/prompt";
 import { generateImage } from "@/lib/image";
 import { saveImagePng } from "@/lib/image-store";
 import type { VisualVersion } from "@/lib/schemas";
 
 export const runtime = "nodejs";
 
-const VIEWS: ViewType[] = ["front_elevation", "exterior_3d"];
+const VIEWS: ViewType[] = VIEW_ORDER;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -63,8 +65,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       return NextResponse.json({ error: decision.reason, code: "budget" }, { status: 429 });
     }
 
-    const layout = project.layouts[0];
-    const prompt = buildImagePrompt(project.brief, layout, view);
+    // Render from the layout the consultant is recommending (set by a revision), else the
+    // primary one — so the 3D and furnished plan reflect the denah actually in focus.
+    const rec = getRecommendedLayout(id);
+    const layout = project.layouts.find((l) => l.id === rec) ?? project.layouts[0];
+    const prompt = buildImagePrompt(project.brief, layout, view, getProjectVisualClauses(id));
     const result = await generateImage({ prompt });
     if (!result.ok) {
       // No spend logged on failure. PDF/review still work with floor plans only.

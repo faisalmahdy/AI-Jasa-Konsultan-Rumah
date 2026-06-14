@@ -174,7 +174,17 @@ export type FeasibilityReport = z.infer<typeof FeasibilityReport>;
 
 export const VisualVersion = z.object({
   id: z.string(),
-  type: z.enum(["front_elevation", "exterior_3d"]),
+  // Stage 4+ view set. `front_elevation` (front) and `exterior_3d` (the 3/4 aerial hero)
+  // are kept from stage 3 so existing visuals stay valid; the rest were added for the
+  // multi-view 3D set generated from the structured layout.
+  type: z.enum([
+    "exterior_3d", // 3D aerial 3/4 helicopter view (hero)
+    "front_elevation", // tampak depan
+    "tampak_samping", // tampak samping
+    "tampak_belakang", // tampak belakang
+    "tampak_atas", // tampak atas / atap (bird-eye)
+    "denah_interior", // furnished top-down floor plan (walls + furniture)
+  ]),
   prompt: z.string(),
   status: z.enum(["candidate", "accepted", "rejected"]),
   imageUrl: z.string().optional(),
@@ -197,3 +207,79 @@ export const ProjectBundle = z.object({
   visuals: z.array(VisualVersion),
 });
 export type ProjectBundle = z.infer<typeof ProjectBundle>;
+
+// ---------------------------------------------------------------------------
+// RevisionIntent — Stage 4 (Agentic MVP).
+//
+// The ONLY structure an LLM produces in this whole app. The revision parser turns a
+// free-text Indonesian request ("tambah 1 kamar, kamar utama di belakang, lebih cerah")
+// into this typed, validated object. The deterministic engine (lib/revise.ts) is what
+// actually applies it — the LLM never touches geometry, money, or final output. Every
+// field is validated here at the trust boundary before anything acts on it.
+//
+// Optional fields use `.nullable()` (null = "no change requested") rather than omission,
+// so the parser must make an explicit decision per field instead of silently dropping one.
+// ---------------------------------------------------------------------------
+
+/** Which of the two deterministic layout strategies the request leans toward. */
+export const LayoutPreference = z.enum(["privasi", "terbuka", "tidak_ada"]);
+export type LayoutPreference = z.infer<typeof LayoutPreference>;
+
+/** Patches to the DesignBrief. Null/empty means "leave this as it was". */
+export const BriefPatch = z.object({
+  floors: z.number().int().min(1).max(2).nullable(),
+  style: Style.nullable(),
+  bedrooms: z.number().int().min(0).max(10).nullable(),
+  bathrooms: z.number().int().min(0).max(10).nullable(),
+  budgetIdr: z.number().int().nonnegative().max(100_000_000_000).nullable(),
+  landWidthM: z.number().positive().max(100).nullable(),
+  landDepthM: z.number().positive().max(100).nullable(),
+  /** Extra rooms to add and to remove (applied on top of the current set). */
+  addRooms: z.array(ExtraRoom),
+  removeRooms: z.array(ExtraRoom),
+  /** When non-null, REPLACES the priorities list. */
+  priorities: z.array(Priority).nullable(),
+});
+export type BriefPatch = z.infer<typeof BriefPatch>;
+
+export const RevisionIntent = z.object({
+  /** Plain-Indonesian restatement of what the consultant asked for. Shown back to them. */
+  understanding: z.string(),
+  briefPatch: BriefPatch,
+  layoutPreference: LayoutPreference,
+  /** Visual tweaks: extra descriptive clauses appended to the image prompt on next regen. */
+  visual: z.object({
+    tweak: z.boolean(),
+    clauses: z.array(z.string()),
+  }),
+  /** Requests that can't be honored at concept stage, each with a short reason. */
+  unsupported: z.array(z.string()),
+  /** Non-null only when the request is too ambiguous to act on safely. */
+  needsClarification: z.string().nullable(),
+});
+export type RevisionIntent = z.infer<typeof RevisionIntent>;
+
+// ---------------------------------------------------------------------------
+// ProjectVersion — an append-only snapshot for the comparison history (Stage 4).
+// Version 1 is the original brief; each accepted revision adds the next version.
+// ---------------------------------------------------------------------------
+
+export const ProjectVersion = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  versionNumber: z.number().int().positive(),
+  createdAt: z.string(),
+  /** The NL request that produced this version (null for version 1). */
+  requestText: z.string().nullable(),
+  /** The parsed intent behind this version (null for version 1). */
+  intent: RevisionIntent.nullable(),
+  /** Human-readable list of what changed vs the previous version. */
+  changes: z.array(z.string()),
+  brief: DesignBrief,
+  feasibility: FeasibilityReport,
+  layouts: z.array(LayoutOption),
+  visuals: z.array(VisualVersion),
+  /** Layout the revision recommends highlighting ("A" | "B"), or null. */
+  recommendedLayout: z.enum(["A", "B"]).nullable(),
+});
+export type ProjectVersion = z.infer<typeof ProjectVersion>;
