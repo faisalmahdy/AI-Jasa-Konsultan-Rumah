@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProject } from "@/lib/pipeline";
+import { getRecommendedLayout } from "@/lib/db";
 import { renderPlanSvg } from "@/lib/svg";
 import {
   formatIdr,
@@ -13,6 +14,7 @@ import {
 import { QUESTIONS_FOR_TUKANG } from "@/lib/content";
 import type { Warning } from "@/lib/schemas";
 import VisualPanel from "./VisualPanel";
+import RevisionSection from "./RevisionSection";
 
 export const runtime = "nodejs";
 
@@ -28,6 +30,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   if (!bundle) notFound();
 
   const { brief, feasibility, layouts } = bundle;
+  const recommendedLayout = getRecommendedLayout(id);
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
@@ -90,8 +93,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         <h2 className="mb-4 text-lg font-semibold text-slate-900">2 Alternatif Denah Konsep</h2>
         <div className="grid gap-6 sm:grid-cols-2">
           {layouts.map((layout) => (
-            <div key={layout.id} className="rounded-xl border border-slate-200 p-4">
-              <h3 className="text-sm font-bold text-slate-900">Denah {layout.id}</h3>
+            <div
+              key={layout.id}
+              className={`rounded-xl border p-4 ${layout.id === recommendedLayout ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200"}`}
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900">Denah {layout.id}</h3>
+                {layout.id === recommendedLayout && (
+                  <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    DIREKOMENDASIKAN
+                  </span>
+                )}
+              </div>
               <p className="mb-3 text-xs text-slate-600">{layout.summary}</p>
               <div
                 className="overflow-hidden rounded-lg bg-white"
@@ -109,12 +122,25 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </div>
       </section>
 
+      {/* Revisi (AI) */}
+      <section className="mb-8">
+        <h2 className="mb-1 text-lg font-semibold text-slate-900">Revisi dengan Bahasa Sehari-hari (AI)</h2>
+        <p className="mb-4 text-sm text-slate-600">
+          Sampaikan perubahan yang diminta klien dengan kalimat biasa. AI menerjemahkannya
+          menjadi perubahan brief; denah dan kelayakan dihitung ulang otomatis. Setiap revisi
+          tersimpan sebagai versi yang bisa dibandingkan.
+        </p>
+        <RevisionSection projectId={id} />
+      </section>
+
       {/* Visual konsep (AI) */}
       <section className="mb-8">
-        <h2 className="mb-1 text-lg font-semibold text-slate-900">Visual Konsep (AI)</h2>
+        <h2 className="mb-1 text-lg font-semibold text-slate-900">Visual Konsep 3D (AI)</h2>
         <p className="mb-4 text-sm text-slate-600">
-          Buat tampak depan dan 3D eksterior konsep lewat AI untuk membantu klien membayangkan
-          rumahnya. Bisa dibuat ulang sampai cocok, lalu disertakan di PDF.
+          Buat 3D aerial (sudut 3/4 helicopter), tampak depan/belakang/samping/atas, dan denah
+          interior berperabot — semuanya dibangun dari denah & data ruang yang sudah dihitung.
+          Generate per tampak sesuai kebutuhan, bisa dibuat ulang sampai cocok, lalu disertakan
+          di PDF. Penyesuaian dari revisi (mis. “warna lebih cerah”) otomatis ikut.
         </p>
         <VisualPanel projectId={id} initialVisuals={bundle.visuals} />
       </section>

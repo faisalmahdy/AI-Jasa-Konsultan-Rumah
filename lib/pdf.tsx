@@ -12,7 +12,7 @@ import {
 } from "@react-pdf/renderer";
 import type { ProjectBundle, LayoutOption, Warning, VisualVersion } from "./schemas";
 import { buildPlanDrawing, PLAN_COLORS } from "./plan-render";
-import { VIEW_LABEL } from "./prompt";
+import { VIEW_LABEL, VIEW_ORDER } from "./prompt";
 import { readImagePng } from "./image-store";
 import { DISCLAIMER, VISUAL_MISMATCH_DISCLAIMER, QUESTIONS_FOR_TUKANG } from "./content";
 import {
@@ -150,14 +150,17 @@ function PlanPage({ bundle, layout }: { bundle: ProjectBundle; layout: LayoutOpt
   );
 }
 
+interface VisualImage {
+  visual: VisualVersion;
+  imageDataUrl: string;
+}
+
 function BriefDocument({
   bundle,
-  chosenVisual,
-  imageDataUrl,
+  visualImages,
 }: {
   bundle: ProjectBundle;
-  chosenVisual: VisualVersion | null;
-  imageDataUrl: string | null;
+  visualImages: VisualImage[];
 }) {
   const { brief, feasibility } = bundle;
 
@@ -229,14 +232,18 @@ function BriefDocument({
         <Text style={s.h1}>Tampak / Visual & Pertanyaan untuk Tukang</Text>
         <Text style={s.sub}>Bawa pertanyaan ini saat berdiskusi dengan tukang atau kontraktor.</Text>
 
-        <Text style={s.h2}>Visual Konsep</Text>
-        {chosenVisual && imageDataUrl ? (
-          <View style={s.card}>
-            <Text style={s.cardTitle}>{VIEW_LABEL[chosenVisual.type]} (konsep)</Text>
-            {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            <Image src={imageDataUrl} style={{ marginTop: 6, marginBottom: 6, width: 380, height: 250, objectFit: "contain" }} />
+        <Text style={s.h2}>Visual Konsep 3D</Text>
+        {visualImages.length > 0 ? (
+          <>
+            {visualImages.map(({ visual, imageDataUrl }) => (
+              <View key={visual.id} style={s.card} wrap={false}>
+                <Text style={s.cardTitle}>{VIEW_LABEL[visual.type]} (konsep)</Text>
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <Image src={imageDataUrl} style={{ marginTop: 6, marginBottom: 6, width: 380, height: 250, objectFit: "contain" }} />
+              </View>
+            ))}
             <Text style={s.cardDetail}>{VISUAL_MISMATCH_DISCLAIMER}</Text>
-          </View>
+          </>
         ) : (
           <View style={s.card}>
             <Text style={s.cardTitle}>Visual belum dibuat</Text>
@@ -264,13 +271,19 @@ function BriefDocument({
 
 /** Render the brief to a PDF buffer. Used by the download route and tests. */
 export function renderBriefPdf(bundle: ProjectBundle): Promise<Buffer> {
-  // Prefer an accepted visual, else the most recent candidate. Degrades to no image.
-  const accepted = bundle.visuals.find((v) => v.status === "accepted");
-  const candidate = [...bundle.visuals].reverse().find((v) => v.status === "candidate");
-  const chosen = accepted ?? candidate ?? null;
-  const png = chosen ? readImagePng(chosen.id) : null;
-  const imageDataUrl = png ? `data:image/png;base64,${png.toString("base64")}` : null;
-  return renderToBuffer(
-    <BriefDocument bundle={bundle} chosenVisual={chosen} imageDataUrl={imageDataUrl} />,
+  // Include EVERY accepted view (in display order) for the handoff package. If nothing is
+  // accepted, fall back to the single most recent candidate. Degrades to no image at all.
+  const accepted = VIEW_ORDER.flatMap((view) =>
+    bundle.visuals.filter((v) => v.type === view && v.status === "accepted"),
   );
+  const chosen = accepted.length
+    ? accepted
+    : [...bundle.visuals].reverse().filter((v) => v.status === "candidate").slice(0, 1);
+
+  const visualImages: VisualImage[] = [];
+  for (const visual of chosen) {
+    const png = readImagePng(visual.id);
+    if (png) visualImages.push({ visual, imageDataUrl: `data:image/png;base64,${png.toString("base64")}` });
+  }
+  return renderToBuffer(<BriefDocument bundle={bundle} visualImages={visualImages} />);
 }

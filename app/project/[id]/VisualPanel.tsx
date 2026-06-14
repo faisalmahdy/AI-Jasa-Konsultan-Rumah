@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import type { VisualVersion } from "@/lib/schemas";
-import { VIEW_LABEL, type ViewType } from "@/lib/prompt";
+import { VIEW_LABEL, VIEW_ORDER, type ViewType } from "@/lib/prompt";
 import { VISUAL_MISMATCH_DISCLAIMER } from "@/lib/content";
 
-const VIEWS: ViewType[] = ["front_elevation", "exterior_3d"];
+const VIEWS: ViewType[] = VIEW_ORDER;
 
 export default function VisualPanel({
   projectId,
