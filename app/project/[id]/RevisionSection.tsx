@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProjectVersion } from "@/lib/schemas";
 import {
@@ -11,6 +11,9 @@ import {
   EXTRA_ROOM_LABEL,
   BUDGET_VERDICT_LABEL,
 } from "@/lib/format";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { Badge } from "@/components/ui/Badge";
 
 interface ReviseResponse {
   ok?: boolean;
@@ -70,7 +73,7 @@ export default function RevisionSection({ projectId }: { projectId: string }) {
       if (data.applied) {
         setRequest("");
         await loadVersions();
-        router.refresh(); // re-render the server page with the new plan
+        router.refresh();
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memproses revisi");
@@ -80,10 +83,10 @@ export default function RevisionSection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
       {/* Revision input */}
-      <div className="rounded-xl border border-slate-200 p-4">
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border-hair)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-xs)", padding: "var(--space-5)" }}>
+        <label style={{ display: "block", marginBottom: "var(--space-2)", fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-strong)" }}>
           Tulis perubahan yang diminta klien (Bahasa Indonesia):
         </label>
         <textarea
@@ -92,67 +95,76 @@ export default function RevisionSection({ projectId }: { projectId: string }) {
           rows={2}
           maxLength={1000}
           placeholder="mis. tambah 1 kamar tidur, kamar utama di belakang, warna lebih cerah"
-          className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          style={{
+            width: "100%",
+            resize: "vertical",
+            borderRadius: "var(--radius-md)",
+            border: "1.5px solid var(--border)",
+            background: "var(--surface)",
+            padding: "0.625rem 0.875rem",
+            fontFamily: "var(--font-sans)",
+            fontSize: "var(--text-sm)",
+            color: "var(--text-strong)",
+            outline: "none",
+          }}
         />
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <button
-            onClick={submit}
-            disabled={loading || !request.trim()}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
-          >
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
+          <Button onClick={submit} loading={loading} disabled={!request.trim()}>
             {loading ? "Memproses…" : "Terapkan Revisi (AI)"}
-          </button>
+          </Button>
           {EXAMPLES.map((ex) => (
             <button
               key={ex}
               type="button"
               onClick={() => setRequest(ex)}
               disabled={loading}
-              className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] text-slate-500 hover:border-slate-400 disabled:opacity-60"
+              style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", color: "var(--text-muted)", background: "var(--surface-sunk)", border: "1px solid var(--border-hair)", borderRadius: "var(--radius-full)", padding: "0.25rem 0.625rem", cursor: loading ? "not-allowed" : "pointer" }}
             >
               {ex}
             </button>
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-slate-400">
+        <p style={{ marginTop: "var(--space-3)", fontSize: "var(--text-2xs)", color: "var(--text-faint)", lineHeight: 1.6 }}>
           AI hanya menerjemahkan permintaan menjadi perubahan brief. Denah & kelayakan tetap
           dihitung otomatis (deterministik), bukan dikarang AI.
         </p>
       </div>
 
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && (
+        <p style={{ padding: "0.625rem 0.875rem", borderRadius: "var(--radius-md)", background: "var(--danger-bg)", border: "1px solid var(--danger-border)", color: "var(--danger-text)", fontSize: "var(--text-sm)" }}>
+          {error}
+        </p>
+      )}
 
       {/* Last revision result */}
       {last && (
-        <div
-          className={`rounded-xl border p-4 ${last.applied ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}
-        >
+        <div style={{ borderRadius: "var(--radius-lg)", border: `1px solid ${last.applied ? "var(--success-border)" : "var(--caution-border)"}`, background: last.applied ? "var(--success-bg)" : "var(--caution-bg)", padding: "var(--space-4) var(--space-5)" }}>
           {last.understanding && (
-            <p className="text-sm text-slate-800">
-              <span className="font-semibold">Dipahami sebagai:</span> {last.understanding}
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-body)", margin: 0 }}>
+              <strong style={{ color: "var(--text-strong)" }}>Dipahami sebagai:</strong> {last.understanding}
             </p>
           )}
           {last.needsClarification && (
-            <p className="mt-2 text-sm text-amber-800">
-              <span className="font-semibold">Perlu klarifikasi:</span> {last.needsClarification}
+            <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-sm)", color: "var(--caution-text)" }}>
+              <strong>Perlu klarifikasi:</strong> {last.needsClarification}
             </p>
           )}
           {last.applied && last.changes && last.changes.length > 0 && (
-            <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm text-slate-700">
+            <ul style={{ margin: "var(--space-2) 0 0", paddingLeft: "1.25rem", fontSize: "var(--text-sm)", color: "var(--text-body)", lineHeight: 1.6 }}>
               {last.changes.map((c, i) => (
                 <li key={i}>{c}</li>
               ))}
             </ul>
           )}
           {last.applied && (!last.changes || last.changes.length === 0) && (
-            <p className="mt-2 text-sm text-slate-600">
+            <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>
               Tidak ada perubahan pada brief (mungkin sudah sesuai permintaan).
             </p>
           )}
           {last.unsupported && last.unsupported.length > 0 && (
-            <div className="mt-2">
-              <p className="text-xs font-semibold text-slate-600">Tidak bisa di tahap konsep:</p>
-              <ul className="list-disc space-y-0.5 pl-5 text-xs text-slate-500">
+            <div style={{ marginTop: "var(--space-2)" }}>
+              <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)", margin: 0 }}>Tidak bisa di tahap konsep:</p>
+              <ul style={{ margin: "2px 0 0", paddingLeft: "1.25rem", fontSize: "var(--text-xs)", color: "var(--text-faint)", lineHeight: 1.55 }}>
                 {last.unsupported.map((u, i) => (
                   <li key={i}>{u}</li>
                 ))}
@@ -160,14 +172,13 @@ export default function RevisionSection({ projectId }: { projectId: string }) {
             </div>
           )}
           {last.visualChanged && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
               Penyesuaian visual disimpan — klik “Buat ulang” di panel Visual untuk menerapkannya.
             </p>
           )}
         </div>
       )}
 
-      {/* History + compare */}
       {versions.length > 0 && <VersionCompare versions={versions} />}
     </div>
   );
@@ -178,7 +189,6 @@ function VersionCompare({ versions }: { versions: ProjectVersion[] }) {
   const [a, setA] = useState(0);
   const [b, setB] = useState(last);
 
-  // Keep selections valid as new versions arrive.
   useEffect(() => {
     setB(versions.length - 1);
     setA(versions.length >= 2 ? versions.length - 2 : 0);
@@ -188,19 +198,18 @@ function VersionCompare({ versions }: { versions: ProjectVersion[] }) {
   const vb = versions[Math.min(b, last)];
 
   return (
-    <div className="rounded-xl border border-slate-200 p-4">
-      <h3 className="mb-3 text-sm font-bold text-slate-900">Riwayat & Perbandingan Versi</h3>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border-hair)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-xs)", padding: "var(--space-5)" }}>
+      <h4 style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-base)", fontWeight: 700, color: "var(--text-strong)", margin: "0 0 var(--space-4)" }}>
+        Riwayat & Perbandingan Versi
+      </h4>
 
-      <ol className="mb-4 space-y-2">
+      <ol style={{ margin: "0 0 var(--space-4)", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
         {versions.map((v) => (
-          <li key={v.versionNumber} className="text-sm">
-            <span className="font-semibold text-slate-800">
-              Versi {v.versionNumber}
-              {v.versionNumber === 1 ? " (asli)" : ""}
-            </span>
-            {v.requestText && <span className="text-slate-500"> — “{v.requestText}”</span>}
-            {v.changes.length > 0 && v.versionNumber !== 1 && (
-              <span className="text-slate-400"> · {v.changes.join("; ")}</span>
+          <li key={v.versionNumber} style={{ fontSize: "var(--text-sm)", display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 6 }}>
+            <Badge tone={v.versionNumber === 1 ? "neutral" : "clay"} uppercase>{`Versi ${v.versionNumber}`}</Badge>
+            {v.requestText && <span style={{ color: "var(--text-muted)" }}>“{v.requestText}”</span>}
+            {v.versionNumber !== 1 && v.changes.length > 0 && (
+              <span style={{ color: "var(--text-faint)", fontSize: "var(--text-xs)" }}>· {v.changes.join("; ")}</span>
             )}
           </li>
         ))}
@@ -208,9 +217,9 @@ function VersionCompare({ versions }: { versions: ProjectVersion[] }) {
 
       {versions.length >= 2 && (
         <>
-          <div className="mb-3 flex flex-wrap items-center gap-3 text-xs">
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: "var(--space-3)", fontSize: "var(--text-xs)" }}>
             <VersionSelect label="Bandingkan" value={a} setValue={setA} versions={versions} />
-            <span className="text-slate-400">dengan</span>
+            <span style={{ color: "var(--text-faint)" }}>dengan</span>
             <VersionSelect label="" value={b} setValue={setB} versions={versions} />
           </div>
           <CompareTable va={va} vb={vb} />
@@ -220,24 +229,14 @@ function VersionCompare({ versions }: { versions: ProjectVersion[] }) {
   );
 }
 
-function VersionSelect({
-  label,
-  value,
-  setValue,
-  versions,
-}: {
-  label: string;
-  value: number;
-  setValue: (n: number) => void;
-  versions: ProjectVersion[];
-}) {
+function VersionSelect({ label, value, setValue, versions }: { label: string; value: number; setValue: (n: number) => void; versions: ProjectVersion[] }) {
   return (
-    <label className="flex items-center gap-1.5">
-      {label && <span className="text-slate-500">{label}</span>}
+    <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      {label && <span style={{ color: "var(--text-muted)" }}>{label}</span>}
       <select
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className="rounded-md border border-slate-300 px-2 py-1 text-xs"
+        style={{ borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", padding: "0.25rem 0.5rem", fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", color: "var(--text-strong)" }}
       >
         {versions.map((v, i) => (
           <option key={v.versionNumber} value={i}>
@@ -259,14 +258,8 @@ function briefRows(v: ProjectVersion): { k: string; val: string }[] {
     { k: "Gaya", val: STYLE_LABEL[b.style] },
     { k: "Kamar tidur", val: String(b.bedrooms) },
     { k: "Kamar mandi", val: String(b.bathrooms) },
-    {
-      k: "Ruang tambahan",
-      val: b.extraRooms.length ? b.extraRooms.map((r) => EXTRA_ROOM_LABEL[r]).join(", ") : "—",
-    },
-    {
-      k: "Prioritas",
-      val: b.priorities.length ? b.priorities.map((p) => PRIORITY_LABEL[p]).join(", ") : "—",
-    },
+    { k: "Ruang tambahan", val: b.extraRooms.length ? b.extraRooms.map((r) => EXTRA_ROOM_LABEL[r]).join(", ") : "—" },
+    { k: "Prioritas", val: b.priorities.length ? b.priorities.map((p) => PRIORITY_LABEL[p]).join(", ") : "—" },
     { k: "Status budget", val: BUDGET_VERDICT_LABEL[v.feasibility.budgetVerdict] },
     { k: "Luas bangunan", val: `± ${round1(v.feasibility.estimatedBuildAreaM2)} m²` },
     { k: "Jumlah peringatan", val: String(v.feasibility.warnings.length) },
@@ -276,26 +269,25 @@ function briefRows(v: ProjectVersion): { k: string; val: string }[] {
 function CompareTable({ va, vb }: { va: ProjectVersion; vb: ProjectVersion }) {
   const rowsA = briefRows(va);
   const rowsB = briefRows(vb);
+  const cellBase: React.CSSProperties = { padding: "0.3rem 0.75rem 0.3rem 0", fontSize: "var(--text-sm)" };
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
-          <tr className="text-left text-xs text-slate-500">
-            <th className="py-1 pr-3 font-medium" />
-            <th className="py-1 pr-3 font-semibold text-slate-700">Versi {va.versionNumber}</th>
-            <th className="py-1 font-semibold text-slate-700">Versi {vb.versionNumber}</th>
+          <tr>
+            <th style={{ ...cellBase, textAlign: "left" }} />
+            <th style={{ ...cellBase, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>Versi {va.versionNumber}</th>
+            <th style={{ ...cellBase, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>Versi {vb.versionNumber}</th>
           </tr>
         </thead>
         <tbody>
           {rowsA.map((row, i) => {
             const changed = row.val !== rowsB[i].val;
             return (
-              <tr key={row.k} className={changed ? "bg-amber-50" : ""}>
-                <td className="py-1 pr-3 text-xs text-slate-500">{row.k}</td>
-                <td className="py-1 pr-3 text-slate-700">{row.val}</td>
-                <td className={`py-1 ${changed ? "font-semibold text-slate-900" : "text-slate-700"}`}>
-                  {rowsB[i].val}
-                </td>
+              <tr key={row.k} style={{ background: changed ? "var(--clay-50)" : "transparent" }}>
+                <td style={{ ...cellBase, paddingLeft: "0.5rem", fontFamily: "var(--font-mono)", fontSize: "var(--text-2xs)", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-faint)" }}>{row.k}</td>
+                <td style={{ ...cellBase, color: "var(--text-body)" }}>{row.val}</td>
+                <td style={{ ...cellBase, fontWeight: changed ? 700 : 400, color: changed ? "var(--clay-700)" : "var(--text-body)" }}>{rowsB[i].val}</td>
               </tr>
             );
           })}

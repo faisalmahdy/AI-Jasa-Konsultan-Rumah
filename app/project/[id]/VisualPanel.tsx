@@ -4,6 +4,9 @@ import { useState } from "react";
 import type { VisualVersion } from "@/lib/schemas";
 import { VIEW_LABEL, VIEW_ORDER, type ViewType } from "@/lib/prompt";
 import { VISUAL_MISMATCH_DISCLAIMER } from "@/lib/content";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Disclaimer } from "@/components/ui/Disclaimer";
 
 const VIEWS: ViewType[] = VIEW_ORDER;
 
@@ -53,54 +56,46 @@ export default function VisualPanel({
   }
 
   return (
-    <div className="space-y-4">
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      {error && (
+        <p style={{ padding: "0.625rem 0.875rem", borderRadius: "var(--radius-md)", background: "var(--danger-bg)", border: "1px solid var(--danger-border)", color: "var(--danger-text)", fontSize: "var(--text-sm)" }}>
+          {error}
+        </p>
+      )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "var(--space-4)" }}>
         {VIEWS.map((view) => {
           const ofView = visuals.filter((v) => v.type === view);
           const latest = ofView[ofView.length - 1];
           const count = ofView.length;
+          const accepted = latest?.status === "accepted";
           return (
-            <div key={view} className="rounded-xl border border-slate-200 p-4">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h3 className="text-sm font-bold text-slate-900">{VIEW_LABEL[view]}</h3>
-                <button
-                  onClick={() => generate(view)}
-                  disabled={loading !== null}
-                  className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
-                >
+            <div key={view} style={{ background: "var(--surface)", border: "1px solid var(--border-hair)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-xs)", padding: "var(--space-4)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: "var(--space-3)" }}>
+                <h4 style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)", margin: 0 }}>{VIEW_LABEL[view]}</h4>
+                <Button size="sm" variant={count > 0 ? "secondary" : "primary"} onClick={() => generate(view)} disabled={loading !== null}>
                   {loading === view ? "Membuat…" : count > 0 ? "Buat ulang" : "Generate AI"}
-                </button>
+                </Button>
               </div>
 
               {latest ? (
                 <div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={latest.imageUrl}
-                    alt={VIEW_LABEL[view]}
-                    className="w-full rounded-lg border border-slate-200"
-                  />
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span
-                      className={`text-xs ${latest.status === "accepted" ? "font-semibold text-green-700" : "text-slate-600"}`}
-                    >
-                      {latest.status === "accepted" ? "Dikunci · masuk PDF" : `Masuk PDF · konsep (dibuat ${count}×)`}
-                    </span>
-                    {latest.status !== "accepted" && (
-                      <button
-                        onClick={() => accept(latest.id)}
-                        className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:border-slate-500"
-                      >
+                  <img src={latest.imageUrl} alt={VIEW_LABEL[view]} style={{ width: "100%", borderRadius: "var(--radius-md)", border: "1px solid var(--border-hair)", display: "block" }} />
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: "var(--space-2)" }}>
+                    <Badge tone={accepted ? "forest" : "neutral"} dot={accepted}>
+                      {accepted ? "Dikunci · masuk PDF" : `Masuk PDF · konsep (${count}×)`}
+                    </Badge>
+                    {!accepted && (
+                      <Button size="sm" variant="ghost" onClick={() => accept(latest.id)}>
                         Kunci versi ini
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-500">
-                  Belum ada gambar. Klik Generate untuk membuat konsep {VIEW_LABEL[view].toLowerCase()} via AI.
+                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", lineHeight: 1.5, margin: 0 }}>
+                  Belum dibuat. Klik Generate untuk membuat {VIEW_LABEL[view].toLowerCase()} via AI dari denah.
                 </p>
               )}
             </div>
@@ -108,11 +103,11 @@ export default function VisualPanel({
         })}
       </div>
 
-      <p className="text-[11px] leading-relaxed text-slate-500">
-        Semua tampak yang Anda buat otomatis ikut saat unduh PDF (satu gambar terbaru per tampak).
-        “Kunci versi ini” hanya untuk mempertahankan pilihan saat Anda membuat ulang.
+      <p style={{ fontSize: "var(--text-2xs)", lineHeight: 1.6, color: "var(--text-faint)", margin: 0 }}>
+        Semua tampak yang kamu buat otomatis ikut saat unduh PDF (satu gambar terbaru per tampak).
+        “Kunci versi ini” hanya untuk mempertahankan pilihan saat membuat ulang.
       </p>
-      <p className="text-[11px] leading-relaxed text-slate-500">{VISUAL_MISMATCH_DISCLAIMER}</p>
+      <Disclaimer>{VISUAL_MISMATCH_DISCLAIMER}</Disclaimer>
     </div>
   );
 }

@@ -58,14 +58,17 @@ export interface PlanDrawing {
   lines: DrawLine[];
 }
 
+// Griya floor-plan palette (--plan-* tokens). Literal hex so the PDF backend, which
+// can't read CSS vars, matches the web SVG exactly. Warm paper rooms, blueprint-blue
+// wet areas, charcoal walls, blueprint openings.
 export const PLAN_COLORS = {
-  stroke: "#334155",
-  wet: "#dbeafe", // wet rooms tinted blue
-  dry: "#f8fafc",
-  text: "#0f172a",
-  dim: "#475569",
-  opening: "#94a3b8",
-  border: "#1e293b",
+  stroke: "#3A332A", // --plan-wall
+  wet: "#DCE8F8", // --plan-wet (blueprint tint)
+  dry: "#FBF7F1", // --plan-dry (warm paper)
+  text: "#221E18", // --plan-label
+  dim: "#6B5F4D", // --plan-dim
+  opening: "#5181CE", // --plan-opening (blueprint-400)
+  border: "#2A241D", // --plan-border
 } as const;
 
 export const PLAN_PADDING = 16;

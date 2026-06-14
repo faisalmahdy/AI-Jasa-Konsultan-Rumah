@@ -2,8 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Compass,
+  Ruler,
+  LayoutGrid,
+  FileText,
+  User,
+  LandPlot,
+  Wallet,
+  Building2,
+  Sofa,
+  Star,
+  ArrowRight,
+} from "lucide-react";
 import { formatIdr } from "@/lib/format";
 import type { ExtraRoom, Priority, Style, Orientation } from "@/lib/schemas";
+import { TextField } from "@/components/ui/TextField";
+import { SelectField } from "@/components/ui/SelectField";
+import { Chip } from "@/components/ui/Chip";
+import { Button } from "@/components/ui/Button";
+import { Disclaimer } from "@/components/ui/Disclaimer";
+import { FormSection } from "@/components/ui/FormSection";
 
 const STYLE_OPTIONS: { value: Style; label: string }[] = [
   { value: "minimalis", label: "Minimalis" },
@@ -41,6 +60,12 @@ const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
   { value: "garasi", label: "Garasi" },
   { value: "taman", label: "Taman" },
   { value: "rumah_tumbuh", label: "Rumah tumbuh" },
+];
+
+const HERO_FEATURES: [React.ReactNode, string][] = [
+  [<Ruler key="r" size={15} />, "Cek kelayakan tanah & budget"],
+  [<LayoutGrid key="l" size={15} />, "2 denah konsep otomatis"],
+  [<FileText key="f" size={15} />, "PDF siap dibawa ke tukang"],
 ];
 
 function toggle<T>(list: T[], v: T): T[] {
@@ -100,135 +125,143 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-10">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Konsultan Pra-Desain Rumah</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Isi kebutuhan rumahmu. Sistem akan membuat cek kelayakan, 2 alternatif denah konsep,
-          dan PDF brief untuk dibawa ke tukang atau kontraktor.
+    <main style={{ paddingInline: "clamp(20px, 5vw, 32px)" }}>
+      {/* Hero */}
+      <section style={{ textAlign: "center", maxWidth: 640, margin: "0 auto", padding: "clamp(40px,7vw,72px) 0 var(--space-8)" }}>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "var(--clay-700)",
+            background: "var(--clay-50)",
+            border: "1px solid var(--clay-200)",
+            borderRadius: 999,
+            padding: "5px 12px",
+            marginBottom: "var(--space-5)",
+          }}
+        >
+          <Compass size={13} /> Konsultan Pra-Desain Rumah
+        </span>
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "clamp(34px,6vw,56px)", lineHeight: 1.02, letterSpacing: "-0.03em", color: "var(--sand-900)", margin: "0 0 var(--space-4)" }}>
+          Rancang sebelum
+          <br />
+          kamu bangun.
+        </h1>
+        <p style={{ fontSize: "clamp(16px,2.2vw,18px)", lineHeight: 1.55, color: "var(--text-muted)", margin: "0 auto", maxWidth: "30em" }}>
+          Isi kebutuhan rumahmu. Dalam sekejap kamu dapat cek kelayakan, dua alternatif denah
+          konsep, dan PDF brief untuk dibawa ke tukang atau kontraktor.
         </p>
-      </header>
-
-      <form onSubmit={onSubmit} className="space-y-7">
-        <Field label="Profil klien">
-          <input
-            type="text"
-            value={clientProfile}
-            onChange={(e) => setClientProfile(e.target.value)}
-            required
-            className={inputCls}
-          />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Lebar tanah (m)">
-            <input type="number" min="1" step="0.5" value={widthM} onChange={(e) => setWidthM(e.target.value)} required className={inputCls} />
-          </Field>
-          <Field label="Panjang tanah (m)">
-            <input type="number" min="1" step="0.5" value={depthM} onChange={(e) => setDepthM(e.target.value)} required className={inputCls} />
-          </Field>
+        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: "var(--space-6)", flexWrap: "wrap" }}>
+          {HERO_FEATURES.map(([ic, t]) => (
+            <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, color: "var(--text-muted)", fontWeight: 500 }}>
+              <span style={{ color: "var(--forest-600)", display: "inline-flex" }}>{ic}</span> {t}
+            </span>
+          ))}
         </div>
+      </section>
 
-        <Field label="Orientasi tanah (opsional)">
-          <select value={orientation} onChange={(e) => setOrientation(e.target.value as Orientation | "")} className={inputCls}>
+      {/* Form card */}
+      <form
+        onSubmit={onSubmit}
+        style={{
+          maxWidth: 640,
+          margin: "0 auto",
+          background: "var(--surface)",
+          border: "1px solid var(--border-hair)",
+          borderRadius: "var(--radius-xl)",
+          boxShadow: "var(--shadow-lg)",
+          padding: "clamp(24px,4vw,40px)",
+        }}
+      >
+        <FormSection icon={<User size={16} />} title="Profil klien">
+          <TextField value={clientProfile} onChange={(e) => setClientProfile(e.target.value)} placeholder="mis. Pegawai 30 tahun" required />
+        </FormSection>
+
+        <FormSection icon={<LandPlot size={16} />} title="Tanah">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
+            <TextField label="Lebar" type="number" min="1" step="0.5" suffix="m" value={widthM} onChange={(e) => setWidthM(e.target.value)} required />
+            <TextField label="Panjang" type="number" min="1" step="0.5" suffix="m" value={depthM} onChange={(e) => setDepthM(e.target.value)} required />
+          </div>
+          <SelectField label="Orientasi (opsional)" value={orientation} onChange={(e) => setOrientation(e.target.value as Orientation | "")}>
             <option value="">— tidak ditentukan —</option>
             {ORIENTATION_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
-          </select>
-        </Field>
+          </SelectField>
+        </FormSection>
 
-        <Field label="Budget konstruksi (Rp)" hint={budgetNum > 0 ? formatIdr(budgetNum) : "belum termasuk tanah, izin, furnitur"}>
-          <input type="number" min="0" step="1000000" value={budgetIdr} onChange={(e) => setBudgetIdr(e.target.value)} required className={inputCls} />
-        </Field>
+        <FormSection icon={<Wallet size={16} />} title="Budget konstruksi">
+          <TextField
+            type="number"
+            min="0"
+            step="1000000"
+            prefix="Rp"
+            value={budgetIdr}
+            onChange={(e) => setBudgetIdr(e.target.value)}
+            required
+            hint={budgetNum > 0 ? `${formatIdr(budgetNum)} · belum termasuk tanah, izin, furnitur` : "belum termasuk tanah, izin, furnitur"}
+          />
+        </FormSection>
 
-        <div className="grid grid-cols-3 gap-4">
-          <Field label="Jumlah lantai">
-            <select value={floors} onChange={(e) => setFloors(e.target.value)} className={inputCls}>
+        <FormSection icon={<Building2 size={16} />} title="Ruang">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
+            <SelectField label="Lantai" value={floors} onChange={(e) => setFloors(e.target.value)}>
               <option value="1">1 lantai</option>
               <option value="2">2 lantai</option>
-            </select>
-          </Field>
-          <Field label="Kamar tidur">
-            <input type="number" min="0" max="10" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} required className={inputCls} />
-          </Field>
-          <Field label="Kamar mandi">
-            <input type="number" min="0" max="10" value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} required className={inputCls} />
-          </Field>
-        </div>
-
-        <Field label="Gaya">
-          <select value={style} onChange={(e) => setStyle(e.target.value as Style)} className={inputCls}>
+            </SelectField>
+            <TextField label="Kamar tidur" type="number" min="0" max="10" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} required />
+            <TextField label="Kamar mandi" type="number" min="0" max="10" value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} required />
+          </div>
+          <SelectField label="Gaya" value={style} onChange={(e) => setStyle(e.target.value as Style)}>
             {STYLE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
-          </select>
-        </Field>
+          </SelectField>
+        </FormSection>
 
-        <Field label="Ruang tambahan" hint="Dapur sudah otomatis disertakan">
-          <div className="flex flex-wrap gap-2">
+        <FormSection icon={<Sofa size={16} />} title="Ruang tambahan" hint="Dapur otomatis disertakan">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--gap-chip)" }}>
             {EXTRA_ROOM_OPTIONS.map((o) => (
               <Chip key={o.value} active={extraRooms.includes(o.value)} onClick={() => setExtraRooms((p) => toggle(p, o.value))}>
                 {o.label}
               </Chip>
             ))}
           </div>
-        </Field>
+        </FormSection>
 
-        <Field label="Prioritas utama">
-          <div className="flex flex-wrap gap-2">
+        <FormSection icon={<Star size={16} />} title="Prioritas utama">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--gap-chip)" }}>
             {PRIORITY_OPTIONS.map((o) => (
               <Chip key={o.value} active={priorities.includes(o.value)} onClick={() => setPriorities((p) => toggle(p, o.value))}>
                 {o.label}
               </Chip>
             ))}
           </div>
-        </Field>
+        </FormSection>
 
-        {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p style={{ marginBottom: "var(--space-4)", padding: "0.625rem 0.875rem", borderRadius: "var(--radius-md)", background: "var(--danger-bg)", border: "1px solid var(--danger-border)", color: "var(--danger-text)", fontSize: "var(--text-sm)" }}>
+            {error}
+          </p>
+        )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
-        >
+        <Button type="submit" variant="primary" size="lg" fullWidth loading={submitting} iconRight={submitting ? null : <ArrowRight size={18} />}>
           {submitting ? "Membuat brief…" : "Buat Brief Pra-Desain"}
-        </button>
+        </Button>
+
+        <div style={{ marginTop: "var(--space-5)" }}>
+          <Disclaimer>
+            Output adalah konsep awal untuk diskusi, bukan gambar kerja (DED) atau gambar siap
+            bangun. Wajib direview tenaga ahli sebelum dibangun.
+          </Disclaimer>
+        </div>
       </form>
-
-      <p className="mt-8 rounded-md bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">
-        Output adalah konsep awal untuk diskusi, bukan gambar kerja (DED) atau gambar siap bangun.
-        Wajib direview tenaga ahli sebelum dibangun.
-      </p>
+      <div style={{ height: "var(--space-10)" }} />
     </main>
-  );
-}
-
-const inputCls =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900";
-
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-800">{label}</span>
-      {children}
-      {hint && <span className="mt-1 block text-xs text-slate-500">{hint}</span>}
-    </label>
-  );
-}
-
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-        active
-          ? "border-slate-900 bg-slate-900 text-white"
-          : "border-slate-300 bg-white text-slate-700 hover:border-slate-500"
-      }`}
-    >
-      {children}
-    </button>
   );
 }

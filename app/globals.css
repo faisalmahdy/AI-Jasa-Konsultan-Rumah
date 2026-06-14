@@ -1,9 +1,148 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+/* ===========================================================================
+   Griya — Design tokens (ported from "Griya — Design System"/tokens/*.css).
+   Warm, grounded, architectural: clay primary, forest success, blueprint plans,
+   warm sand neutrals. Semantic aliases (--primary, --surface, --text-body…) are
+   what components consume — never the raw scales directly.
+   Font families resolve to the next/font variables set on <html> in layout.tsx.
+   =========================================================================== */
+:root {
+  /* clay — primary (brick & earth: the act of building) */
+  --clay-50: #FBF1EC;  --clay-100: #F6E0D4; --clay-200: #ECC3AD; --clay-300: #E0A081;
+  --clay-400: #D27E58; --clay-500: #C2613F; --clay-600: #A64E31; --clay-700: #863E28;
+  --clay-800: #693224; --clay-900: #4F2820;
+  /* forest — success / growth / "go" */
+  --forest-50: #ECF4EE; --forest-100: #D2E5D8; --forest-200: #A6CAB2; --forest-300: #75AB88;
+  --forest-400: #4C8A62; --forest-500: #2F6B4F; --forest-600: #265845; --forest-700: #1E4536;
+  --forest-800: #18372B; --forest-900: #122A21;
+  /* blueprint — plans / info / technical accent */
+  --blueprint-50: #EEF3FB; --blueprint-100: #D7E3F6; --blueprint-200: #AFC7ED; --blueprint-300: #7FA4DF;
+  --blueprint-400: #5181CE; --blueprint-500: #2F62B5; --blueprint-600: #244E94; --blueprint-700: #1D3E76;
+  --blueprint-800: #18335F;
+  /* sand — warm neutrals (never cold slate) */
+  --sand-0: #FFFFFF; --sand-50: #FAF6F0; --sand-100: #F4EDE3; --sand-200: #E9DECF;
+  --sand-300: #D8C9B4; --sand-400: #B8A88F; --sand-500: #8C7E68; --sand-600: #6B5F4D;
+  --sand-700: #4A4135; --sand-800: #2F2920; --sand-900: #221E18;
+
+  /* semantic severity families */
+  --danger-bg: #FBEAE6;  --danger-border: #EFC4B9;  --danger-500: #C2402F;  --danger-text: #8A2A1E;
+  --caution-bg: #FBF0DD; --caution-border: #EAD2A3; --caution-500: #C77E2A; --caution-text: #82531A;
+  --info-bg: #E8F0FB;    --info-border: #BCD0EE;    --info-500: #2F62B5;    --info-600: #244E94; --info-text: #244E94;
+  --success-bg: #E6F0E9; --success-border: #B6D3BF; --success-500: #2F6B4F; --success-text: #1E4536;
+
+  /* surfaces & ink */
+  --bg-app: var(--sand-50); --bg-canvas: var(--sand-100);
+  --surface: var(--sand-0); --surface-sunk: var(--sand-50);
+  --surface-clay: var(--clay-50); --surface-forest: var(--forest-50);
+  --text-strong: var(--sand-900); --text-body: var(--sand-800);
+  --text-muted: var(--sand-600); --text-faint: var(--sand-500);
+  --text-on-clay: var(--sand-0); --text-on-dark: var(--sand-50);
+  --border-hair: var(--sand-200); --border: var(--sand-300); --border-strong: var(--sand-400);
+
+  /* roles */
+  --primary: var(--clay-500); --primary-hover: var(--clay-600); --primary-press: var(--clay-700);
+  --primary-soft: var(--clay-50); --on-primary: var(--sand-0);
+  --accent: var(--forest-500); --accent-hover: var(--forest-600); --accent-soft: var(--forest-50);
+  --on-accent: var(--sand-0); --focus-ring: var(--clay-400);
+
+  /* floor-plan drawing layer */
+  --plan-paper: var(--sand-0); --plan-dry: #FBF7F1; --plan-wet: #DCE8F8;
+  --plan-wall: #3A332A; --plan-border: #2A241D; --plan-opening: var(--blueprint-400);
+  --plan-dim: var(--sand-600); --plan-label: var(--sand-900);
+
+  /* type — families resolve to next/font variables (layout.tsx) */
+  --font-display: var(--font-bricolage), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700; --fw-extra: 800;
+  --text-2xs: 0.6875rem; --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+  --text-lg: 1.125rem; --text-xl: 1.375rem; --text-2xl: 1.75rem; --text-3xl: 2.25rem;
+  --text-4xl: 3rem; --text-5xl: 3.875rem;
+  --leading-tight: 1.08; --leading-snug: 1.25; --leading-normal: 1.5; --leading-relaxed: 1.65;
+  --tracking-tight: -0.02em; --tracking-snug: -0.01em; --tracking-normal: 0em;
+  --tracking-wide: 0.02em; --tracking-caps: 0.08em;
+
+  /* spacing — 4px grid */
+  --space-0: 0; --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.25rem; --space-6: 1.5rem; --space-7: 2rem; --space-8: 2.5rem; --space-9: 3rem;
+  --space-10: 4rem; --space-11: 5rem; --space-12: 6.5rem;
+  --gap-field: var(--space-5); --gap-chip: var(--space-2);
+  --pad-card: var(--space-6); --pad-section: var(--space-9);
+  --width-form: 40rem; --width-content: 52rem; --width-page: 72rem;
+
+  /* radius — soft but architectural; never pill-everything */
+  --radius-xs: 4px; --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+  --radius-xl: 20px; --radius-2xl: 28px; --radius-full: 999px;
+
+  /* elevation — warm-tinted, low-contrast daylight shadows */
+  --shadow-color: 30deg 24% 18%;
+  --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.06);
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.05), 0 2px 6px hsl(var(--shadow-color) / 0.06);
+  --shadow-md: 0 2px 4px hsl(var(--shadow-color) / 0.05), 0 6px 16px hsl(var(--shadow-color) / 0.08);
+  --shadow-lg: 0 4px 8px hsl(var(--shadow-color) / 0.06), 0 16px 36px hsl(var(--shadow-color) / 0.10);
+  --shadow-xl: 0 8px 16px hsl(var(--shadow-color) / 0.08), 0 28px 60px hsl(var(--shadow-color) / 0.14);
+  --ring-width: 3px; --ring-offset: 2px;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1); --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-fast: 120ms; --dur: 200ms; --dur-slow: 320ms;
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
+/* Expose the brand fonts to Tailwind's font-* utilities too. */
+@theme inline {
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+/* ===========================================================================
+   Base element defaults (ported from tokens/base.css).
+   =========================================================================== */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-body);
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--text-strong);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+a { color: var(--clay-700); text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+::selection { background: var(--clay-200); color: var(--sand-900); }
+:focus-visible { outline: var(--ring-width) solid var(--focus-ring); outline-offset: var(--ring-offset); }
+
+@keyframes gr-spin { to { transform: rotate(360deg); } }
+
+/* Mono uppercase eyebrow used across cards / sections */
+.gr-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The one texture in the system: a faint blueprint grid behind plan drawings. */
+.gr-blueprint {
+  background-color: var(--plan-paper);
+  background-image:
+    linear-gradient(var(--sand-100) 1px, transparent 1px),
+    linear-gradient(90deg, var(--sand-100) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
